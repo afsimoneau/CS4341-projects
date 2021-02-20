@@ -25,8 +25,10 @@ class AlphaBetaAgent(agent.Agent):
     # NOTE: make sure the column is legal, or you'll lose the game.
     def go(self, brd):
         """Search for the best move (choice of column for the token)"""
-        return solve(brd, 0, 0)
+        return self.solve(brd, 0, 0)
+        #brd.print_it()
 
+    #solve for the best possible next move
     def solve(self, brd, alpha, beta):
         successors = self.get_successors(brd)
         
@@ -43,7 +45,7 @@ class AlphaBetaAgent(agent.Agent):
         #best = -s[0].h*s[0].w
         
         #upper bound of score - cannot win right away
-        max = s[0].h*s[0].w
+        max = (s[0].h*s[0].w) - self.num_moves(s[0])
         
         if beta > max:
             #beta does not need to be greater than max
@@ -54,14 +56,15 @@ class AlphaBetaAgent(agent.Agent):
         
         #find score of all possible next moves and keep the best one
         for s in successors:
-            score = self.go(s)
+            score = self.solve(s[0], alpha, beta)
             #Checking game.py and says that game returns 1 for p1 and 2 for p2 - compare and see if player equals 2 to determine?
             if s[0].get_outcome() != 0:
-                score = -solve(s[0], -alpha, -beta)
+                score = -(s[0].h * s[0].w) + self.num_moves(s[0])
                 
             #Keep track of the best possible score so far
             #if (score > best):
                 #best = score
+
             #prune if we found a better move than before
             if score >= beta:
                 return score
@@ -76,7 +79,7 @@ class AlphaBetaAgent(agent.Agent):
         n = 0
         for y in range(brd.h):
             for x in range(brd.w):
-                if self.board[y][x] != 0:
+                if brd.board[y][x] != 0:
                     n+=1
         return n
 
