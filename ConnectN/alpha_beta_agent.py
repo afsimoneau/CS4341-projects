@@ -1,5 +1,9 @@
 import math
 import agent
+import random
+import os
+
+random.seed(1)
 
 ###########################
 # Alpha-Beta Search Agent #
@@ -14,6 +18,9 @@ class AlphaBetaAgent(agent.Agent):
     # PARAM [int]    max_depth: the maximum search depth
     def __init__(self, name, max_depth):
         super().__init__(name)
+        self.zb_table = None
+
+        self.trans_table = {}
         # Max search depth
         self.max_depth = max_depth
 
@@ -24,8 +31,20 @@ class AlphaBetaAgent(agent.Agent):
     #
     # NOTE: make sure the column is legal, or you'll lose the game.
     def go(self, brd):
+        if self.zb_table == None:
+            self.zb_table = self.zobrist_init(brd)
         """Search for the best move (choice of column for the token)"""
-        return self.solve(brd, 0, 0)
+        successors = self.get_successors(brd)
+        best = -math.inf
+        best_index = -1
+        alpha = -math.inf
+        beta = math.inf
+        for i,succ in enumerate(successors):
+            result = self.solve(succ[0],alpha,beta)
+            if result>best:
+                best_index = i
+
+        return successors[best_index][1]#returns column number
         #brd.print_it()
 
     #solve for the best possible next move
@@ -56,7 +75,15 @@ class AlphaBetaAgent(agent.Agent):
         
         #find score of all possible next moves and keep the best one
         for s in successors:
-            score = self.solve(s[0], alpha, beta)
+            score = 0
+            hash = self.zb_hash(s[0])
+            if hash in self.trans_table:
+                score = self.trans_table[hash]
+            else:
+                score = self.solve(s[0], alpha, beta)
+                new_hash = self.zb_hash(s[0])
+                self.trans_table[new_hash] = score
+
             #Checking game.py and says that game returns 1 for p1 and 2 for p2 - compare and see if player equals 2 to determine?
             if s[0].get_outcome() != 0:
                 score = -(s[0].h * s[0].w) + self.num_moves(s[0])
@@ -84,6 +111,22 @@ class AlphaBetaAgent(agent.Agent):
         return n
 
 
+    def zobrist_init(self,brd):
+        table = [list(range(brd.h*brd.w)),[]]
+        for i in range(brd.h*brd.w-1):
+            #could do empty at a later time if this doesn't work 
+            table[i][0] = os.urandom(8)
+            table[i][1] = os.urandom(8)
+
+    def zb_hash(self,brd):
+        h = 0
+        for y in range(brd.h):
+            for x in range(brd.w):
+                piece = brd.board[y][x]
+                if piece != 0:
+                    h = h ^ self.zb_table[y*x][piece-1]
+        return h
+
     # Get the successors of the given board.
     #
     # PARAM [board.Board] brd: the board state
@@ -98,6 +141,7 @@ class AlphaBetaAgent(agent.Agent):
         if not freecols:
             return []
         # Make a list of the new boards along with the corresponding actions
+        random.shuffle(freecols)
         succ = []
         for col in freecols:
             # Clone the original board

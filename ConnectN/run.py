@@ -15,6 +15,25 @@ g = game.Game(7, # width
               aba.THE_AGENT,       # player 1
               agent.RandomAgent("random2"))       # player 2
 
+'''
+g = game.Game(10, # width
+              8, # height
+              4, # tokens in a row to win
+              aba.THE_AGENT,       # player 1
+              agent.RandomAgent("random2"))       # player 2
+
+g = game.Game(7, # width
+              6, # height
+              5, # tokens in a row to win
+              aba.THE_AGENT,       # player 1
+              agent.RandomAgent("random2"))       # player 2
+
+g = game.Game(10, # width
+              8, # height
+              5, # tokens in a row to win
+              aba.THE_AGENT,       # player 1
+              agent.RandomAgent("random2"))       # player 2
+'''
 #
 # Human vs. Random
 #
