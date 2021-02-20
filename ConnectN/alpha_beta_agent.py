@@ -25,25 +25,52 @@ class AlphaBetaAgent(agent.Agent):
     # NOTE: make sure the column is legal, or you'll lose the game.
     def go(self, brd):
         """Search for the best move (choice of column for the token)"""
-        return self.solve(brd,0,0)
+        return self.solve(brd, 0, 0)
 
     def solve(self, brd, alpha, beta):
         successors = self.get_successors(brd)
-        if len(successors)==0:
+        
+        #if there is a draw
+        if len(successors) == 0:
             return 0
         
+        #If current player can win in the next move
         for s in successors:
             if s[0].get_outcome() != 0:
-                return ((s[0].h*s[0].w)+1 - self.num_moves(s[0]))
-
-        best = -s[0].h*s[0].w
-
+                return ((s[0].h * s[0].w) + 1 - self.num_moves(s[0]))
+        
+        #the lower bound of the best possible score
+        #best = -s[0].h*s[0].w
+        
+        #upper bound of score - cannot win right away
+        max = s[0].h*s[0].w
+        
+        if beta > max:
+            #beta does not need to be greater than max
+            beta = max
+            #prune the alpha,beta window
+            if alpha >= beta:
+                return beta
+        
+        #find score of all possible next moves and keep the best one
         for s in successors:
             score = self.go(s)
-            if (score>best):
-                best = score
+            #Checking game.py and says that game returns 1 for p1 and 2 for p2 - compare and see if player equals 2 to determine?
+            if s[0].get_outcome != 0:
+                score = -solve(s[0], -alpha, -beta)
+                
+            #Keep track of the best possible score so far
+            #if (score > best):
+                #best = score
+            #prune if we found a better move than before
+            if score >= beta:
+                return score
+            #reduce the alpha,beta window for search
+            if score > alpha:
+                alpha = score
 
-        return best
+        #return best
+        return alpha
 
     def num_moves(self, brd):
         n = 0
