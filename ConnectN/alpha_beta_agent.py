@@ -25,7 +25,7 @@ class AlphaBetaAgent(agent.Agent):
     # NOTE: make sure the column is legal, or you'll lose the game.
     def go(self, brd):
         """Search for the best move (choice of column for the token)"""
-        return self.solve(brd, 0, 0)
+        return solve(brd, 0, 0)
 
     def solve(self, brd, alpha, beta):
         successors = self.get_successors(brd)
@@ -56,7 +56,7 @@ class AlphaBetaAgent(agent.Agent):
         for s in successors:
             score = self.go(s)
             #Checking game.py and says that game returns 1 for p1 and 2 for p2 - compare and see if player equals 2 to determine?
-            if s[0].get_outcome != 0:
+            if s[0].get_outcome() != 0:
                 score = -solve(s[0], -alpha, -beta)
                 
             #Keep track of the best possible score so far
