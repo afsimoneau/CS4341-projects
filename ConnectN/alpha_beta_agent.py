@@ -25,7 +25,9 @@ class AlphaBetaAgent(agent.Agent):
     # NOTE: make sure the column is legal, or you'll lose the game.
     def go(self, brd):
         """Search for the best move (choice of column for the token)"""
+
         # Your code here
+        return 0
 
     # Get the successors of the given board.
     #
