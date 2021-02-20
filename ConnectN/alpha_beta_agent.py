@@ -25,9 +25,34 @@ class AlphaBetaAgent(agent.Agent):
     # NOTE: make sure the column is legal, or you'll lose the game.
     def go(self, brd):
         """Search for the best move (choice of column for the token)"""
+        return self.solve(brd,0,0)
 
-        # Your code here
-        return 0
+    def solve(self, brd, alpha, beta):
+        successors = self.get_successors(brd)
+        if len(successors)==0:
+            return 0
+        
+        for s in successors:
+            if s[0].get_outcome() != 0:
+                return ((s[0].h*s[0].w)+1 - self.num_moves(s[0]))
+
+        best = -s[0].h*s[0].w
+
+        for s in successors:
+            score = self.go(s)
+            if (score>best):
+                best = score
+
+        return best
+
+    def num_moves(self, brd):
+        n = 0
+        for y in range(brd.h):
+            for x in range(brd.w):
+                if self.board[y][x] != 0:
+                    n+=1
+        return n
+
 
     # Get the successors of the given board.
     #
