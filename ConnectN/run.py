@@ -4,35 +4,55 @@ import agent
 import alpha_beta_agent as aba
 
 # Set random seed for reproducibility
-random.seed(1)
-
-#
-# Random vs. Random
-#
-g = game.Game(7, # width
-              6, # height
-              4, # tokens in a row to win
-              aba.THE_AGENT,       # player 1
-              agent.RandomAgent("random2"))       # player 2
-
+random.seed()
 '''
-g = game.Game(10, # width
-              8, # height
+g1 = game.Game(7, # width
+              6, # height
               4, # tokens in a row to win
               aba.THE_AGENT,       # player 1
               agent.RandomAgent("random2"))       # player 2
 
-g = game.Game(7, # width
+outcome = g1.go()
+'''
+
+win = 0
+total = 10
+w = 10
+h = 8
+t = 4
+for i in range(total):
+    a1 = aba.AlphaBetaAgent("Group21",4)
+    a2 = agent.RandomAgent("random2")
+    g = game.Game(w,h,t,a1,a2)      
+    if (g.go()==1):
+        win+=1
+print(f"\nTOTAL WIN/LOSS:\nTotal: {total}\nWins: {win}\nRatio: {win/total}")
+'''
+g2 = game.Game(7, # width
               6, # height
               5, # tokens in a row to win
               aba.THE_AGENT,       # player 1
               agent.RandomAgent("random2"))       # player 2
 
-g = game.Game(10, # width
+outcome = g2.go()
+
+g3 = game.Game(10, # width
+              8, # height
+              4, # tokens in a row to win
+              aba.THE_AGENT,       # player 1
+              agent.RandomAgent("random2"))       # player 2
+
+outcome = g3.go()
+
+
+
+g4 = game.Game(10, # width
               8, # height
               5, # tokens in a row to win
               aba.THE_AGENT,       # player 1
               agent.RandomAgent("random2"))       # player 2
+
+outcome = g4.go()
 '''
 #
 # Human vs. Random
@@ -69,6 +89,3 @@ g = game.Game(10, # width
 #               4, # tokens in a row to win
 #               agent.InteractiveAgent("human1"),   # player 1
 #               agent.InteractiveAgent("human2"))   # player 2
-
-# Execute the game
-outcome = g.go()

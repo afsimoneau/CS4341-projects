@@ -2,6 +2,7 @@ import math
 import agent
 import random
 import os
+import sys
 
 random.seed(1)
 
@@ -31,10 +32,12 @@ class AlphaBetaAgent(agent.Agent):
     #
     # NOTE: make sure the column is legal, or you'll lose the game.
     def go(self, brd):
-        if self.zb_table == None:
-            self.zb_table = self.zobrist_init(brd)
+        if self.zb_table == None or (len(self.zb_table)<brd.h) or (len(self.zb_table[0])<brd.w):
+            self.zobrist_init(brd)
+            #print(self.zb_table)
         """Search for the best move (choice of column for the token)"""
         successors = self.get_successors(brd)
+        #print(successors)
         best = -math.inf
         best_index = -1
         alpha = -math.inf
@@ -43,12 +46,15 @@ class AlphaBetaAgent(agent.Agent):
             result = self.solve(succ[0],alpha,beta)
             if result>best:
                 best_index = i
+                best = result
 
         return successors[best_index][1]#returns column number
         #brd.print_it()
 
     #solve for the best possible next move
     def solve(self, brd, alpha, beta):
+        #brd.print_it()
+        #print(f"\n{alpha}, {beta}")
         successors = self.get_successors(brd)
         
         #if there is a draw
@@ -80,17 +86,8 @@ class AlphaBetaAgent(agent.Agent):
             if hash in self.trans_table:
                 score = self.trans_table[hash]
             else:
-                score = self.solve(s[0], alpha, beta)
-                new_hash = self.zb_hash(s[0])
-                self.trans_table[new_hash] = score
-
-            #Checking game.py and says that game returns 1 for p1 and 2 for p2 - compare and see if player equals 2 to determine?
-            if s[0].get_outcome() != 0:
-                score = -(s[0].h * s[0].w) + self.num_moves(s[0])
-                
-            #Keep track of the best possible score so far
-            #if (score > best):
-                #best = score
+                score = -self.solve(s[0], -beta,-alpha)
+                self.trans_table[hash] = score
 
             #prune if we found a better move than before
             if score >= beta:
@@ -109,27 +106,19 @@ class AlphaBetaAgent(agent.Agent):
                 if brd.board[y][x] != 0:
                     n+=1
         return n
-
-
-   def zobrist_init(self,brd):
-        size = [] * brd.h*brd.w
-        pieces =[] * brd.h*brd.w
-        table = [size, pieces]
-        
-        for i in range(0,1):
-            for j in range(0,len(size)-1):
-            #could do empty at a later time if this doesn't work 
-                table[i][j].append(os.urandom(8))
-
-        return table
+    
+    def zobrist_init(self,brd):
+        self.zb_table = [[(os.urandom(8),os.urandom(8))] * brd.w for i in range(brd.h)]
+        self.trans_table = {}
+                
 
     def zb_hash(self,brd):
         h = 0
-        for y in range(0,(brd.h-1)):
-            for x in range(0,(brd.w-1)):
+        for y in range(0,brd.h):
+            for x in range(0,brd.w):
                 piece = brd.board[y][x]
                 if piece != 0:
-                    h = h ^ self.zb_table[y*x][piece-1]
+                    h = h ^ int.from_bytes(self.zb_table[y][x][piece-1],"little")
         return h
 
 
