@@ -111,21 +111,27 @@ class AlphaBetaAgent(agent.Agent):
         return n
 
 
-    def zobrist_init(self,brd):
-        table = [list(range(brd.h*brd.w)),[]]
-        for i in range(brd.h*brd.w-1):
+   def zobrist_init(self,brd):
+        size = [] * brd.h*brd.w
+        pieces =[] * brd.h*brd.w
+        table = [size, pieces]
+        
+        for i in range(0,1):
+            for j in range(0,len(size)-1):
             #could do empty at a later time if this doesn't work 
-            table[i][0] = os.urandom(8)
-            table[i][1] = os.urandom(8)
+                table[i][j].append(os.urandom(8))
+
+        return table
 
     def zb_hash(self,brd):
         h = 0
-        for y in range(brd.h):
-            for x in range(brd.w):
+        for y in range(0,(brd.h-1)):
+            for x in range(0,(brd.w-1)):
                 piece = brd.board[y][x]
                 if piece != 0:
                     h = h ^ self.zb_table[y*x][piece-1]
         return h
+
 
     # Get the successors of the given board.
     #
