@@ -53,15 +53,17 @@ class AlphaBetaAgent(agent.Agent):
         if len(successors) == 0:
             return 0
 
-        # If current player can win with specific move
-        for i, s in enumerate(successors):
-            if s[0].get_outcome() != 0:
+        # If we can find a winning move, return the max potential value for winning
+        # Subtract by number of moves to allow a/b pruning to find quicker wins
+        for s in successors:
+            outcome = s[0].get_outcome()
+            if outcome != 0:
                 if self.max_depth == depth:
-                    return i
+                    # We're the root node and the first moves we're allowed to make will win the game, return column index
+                    return s[1]
                 else:
                     # 10^n is the winning potential (do -num moves to find quicker wins)
                     return (int(math.pow(10, brd.n)) - (self.num_moves(s[0])+1))
-        
 
         # upper bound of score - cannot win right away
         max = (int(math.pow(10, brd.n)) - self.num_moves(brd))
@@ -77,26 +79,28 @@ class AlphaBetaAgent(agent.Agent):
                 return beta
 
         # find score of all possible next moves and keep the best one
-        best_index = -1
-        for i, s in enumerate(successors):
+        best_col = -1 
+        for s in successors:
             score = -self.solve(s[0], -beta, -alpha, depth-1, 2 if (player==1) else 1)
 
             # prune if we found a better move than before
             if score >= beta:
                 if self.max_depth == depth:
-                    return i
+                    # Return column index if we're at root node
+                    return s[1]
                 else:
                     return score
 
-            # reduce the alpha,beta window for search
+            # reduce the alpha,beta window
             if score > alpha:
                 alpha = score
-                best_index = i
+                best_col = s[1]
 
-        # return best or index of best successor
+        # Return alpha or column index of best move if root
         self.trans_table[self.zb_hash(brd)] = alpha
         if self.max_depth == depth:
-            return best_index
+            # Return column index if we're at root node
+            return best_col
         else:
             return alpha
 
@@ -123,16 +127,16 @@ class AlphaBetaAgent(agent.Agent):
         return (player_token, coords)
 
     def evaluate(self, brd):
-        if brd.get_outcome()!=0:
-            return (int(math.pow(10, brd.n)) + 1 - self.num_moves(brd))
         all_lines = []
         for x in range(brd.w):
             for y in range(brd.h):
                 checked = False
+                '''
                 for coords in all_lines:
                     if (x, y) in coords[1]:
                         # if we've evaluated this x,y before, ignore it. part of line(s) already calculated
                         checked = True
+                '''
                 if not checked:
                     # check directions
                     # ignore anything out of bounds
@@ -155,7 +159,7 @@ class AlphaBetaAgent(agent.Agent):
             n = int(math.pow(10, len(line[1])-1))
             if line[0] == 1:
                 p1_val += n
-            else:
+            elif line[0] == 2:
                 p2_val += n
         ret = (p1_val-p2_val)  # what we will return
         if self.max_depth % 2 == 1:
