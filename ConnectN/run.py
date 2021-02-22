@@ -17,8 +17,8 @@ outcome = g1.go()
 
 win = 0
 total = 10
-w = 10
-h = 8
+w = 7
+h = 6
 t = 4
 for i in range(total):
     a1 = aba.AlphaBetaAgent("Group21",4)

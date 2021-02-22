@@ -70,7 +70,10 @@ class AlphaBetaAgent(agent.Agent):
         #best = -s[0].h*s[0].w
         
         #upper bound of score - cannot win right away
-        max = (s[0].h*s[0].w) - self.num_moves(s[0])
+        max = ((s[0].h*s[0].w) - 1) - self.num_moves(s[0])
+        curHash = self.zb_hash(brd)
+        if curHash in self.trans_table:
+            max = self.trans_table[curHash] + beta - 1 
         
         if beta > max:
             #beta does not need to be greater than max
@@ -86,7 +89,7 @@ class AlphaBetaAgent(agent.Agent):
             if hash in self.trans_table:
                 score = self.trans_table[hash]
             else:
-                score = -self.solve(s[0], -beta,-alpha)
+                score = -self.solve(s[0], -beta, -alpha)
                 self.trans_table[hash] = score
 
             #prune if we found a better move than before
