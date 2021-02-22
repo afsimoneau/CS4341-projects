@@ -18,16 +18,18 @@ outcome = g1.go()
 win = 0
 lose = 0 
 tie = 0
-total = 10
+total = 0
+max = 200
 w = 10
 h = 8
 t = 5
-d = 5
-for i in range(total):
+d = 4
+for i in range(max):
     a1 = aba.AlphaBetaAgent("Group21",d)
     a2 = agent.RandomAgent("random2")
-    g = game.Game(w,h,t,a1,a2)      
+    g = game.Game(w,h,t,a1,a2)
     result = g.timed_go(15)
+    total+=1
     if result==0:
         tie+=1
     elif result == 1:
