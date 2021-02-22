@@ -7,7 +7,7 @@ import alpha_beta_agent as aba
 random.seed()
 '''
 g1 = game.Game(7, # width
-              6, # height
+              6, # height 
               4, # tokens in a row to win
               aba.THE_AGENT,       # player 1
               agent.RandomAgent("random2"))       # player 2
@@ -16,17 +16,26 @@ outcome = g1.go()
 '''
 
 win = 0
+lose = 0 
+tie = 0
 total = 10
-w = 7
-h = 6
-t = 4
+w = 10
+h = 8
+t = 5
+d = 5
 for i in range(total):
-    a1 = aba.THE_AGENT
+    a1 = aba.AlphaBetaAgent("Group21",d)
     a2 = agent.RandomAgent("random2")
     g = game.Game(w,h,t,a1,a2)      
-    if (g.go()==1):
+    result = g.timed_go(15)
+    if result==0:
+        tie+=1
+    elif result == 1:
         win+=1
-print(f"\nTOTAL WIN/LOSS:\nTotal: {total}\nWins: {win}\nRatio: {win/total}")
+    else:
+        lose+=1
+    print(f"\nTOTAL W/L/T:\nTotal: {total}\nWins: {win}\Lose: {lose}\Tie: {tie}\n(W/L) Ratio: {win/total}")
+
 '''
 g2 = game.Game(7, # width
               6, # height
