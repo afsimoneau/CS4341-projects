@@ -38,52 +38,70 @@ class AlphaBetaAgent(agent.Agent):
 
         alpha = -sys.maxsize
         beta = sys.maxsize
-        result = self.solve(brd, alpha, beta, self.max_depth,1)
+        result = self.solve(brd, alpha, beta, self.max_depth)
         return result  # returns column number
         # brd.print_it()
 
-    # solve for the best possible next move
-    def solve(self, brd, alpha, beta, depth, player):
+    # Solves for the best possible move
+    #
+    # PARAM [board.Board] brd: current board state
+    # PARAM [int] alpha: alpha value for this node
+    # PARAM [int] beta: beta value for this node
+    # PARAM [int] depth: depth of this node
+    #
+    # RETURN [int]: column index if depth = max_depth OR value for sub-tree evaluations
+    def solve(self, brd, alpha, beta, depth):
+        # We've reached max depth and found no winning moves
+        # Determine the value of this board position
         if depth == 0:
             return self.evaluate(brd)
 
+        # Store this for later use
         successors = self.get_successors(brd)
 
-        # if there is a draw
+        # Check if the successors are empty
+        # This would be a draw, return 0 since it's not a desired outcome
         if len(successors) == 0:
             return 0
 
-        # If we can find a winning move, return the max potential value for winning
-        # Subtract by number of moves to allow a/b pruning to find quicker wins
-        for s in successors:
-            outcome = s[0].get_outcome()
-            if outcome != 0:
-                if self.max_depth == depth:
-                    # We're the root node and the first moves we're allowed to make will win the game, return column index
-                    return s[1]
-                else:
-                    # 10^n is the winning potential (do -num moves to find quicker wins)
-                    return (int(math.pow(10, brd.n)) - (self.num_moves(s[0])+1))
-
-        # upper bound of score - cannot win right away
+        # The score limit for this current position is 10^n - num moves
+        # We will check the transposition table to skip further evaluation
         max = (int(math.pow(10, brd.n)) - self.num_moves(brd))
         curHash = self.zb_hash(brd)
         if curHash in self.trans_table:
             max = self.trans_table[curHash] + beta - 1
 
+        # Check if beta and max differ
+        # When they do, we need to also check if alpha >= beta for pruning
         if beta > max:
-            # beta does not need to be greater than max
             beta = max
-            # prune the alpha,beta window
             if alpha >= beta:
-                return beta
+                return beta  # Pruned the position from previous execution data
 
-        # find score of all possible next moves and keep the best one
-        best_col = -1 
+        # If we can find a winning move from a successor, return the appropriate value
+        # Subtract by number of moves to allow a/b pruning to find quicker wins
         for s in successors:
-            score = -self.solve(s[0], -beta, -alpha, depth-1, 2 if (player==1) else 1)
+            outcome = s[0].get_outcome()
+            if outcome != 0:
+                # This will be a win for us since it's current player's move
+                if self.max_depth == depth:
+                    # We're the root node!
+                    # Return column index instead of a utility value
+                    return s[1]
+                else:
+                    #
+                    return (int(math.pow(10, brd.n)) - (self.num_moves(s[0])))
 
-            # prune if we found a better move than before
+        # Main recursive body ----------------------
+        # Find score of all possible next moves and keep the best one
+        best_col = -1
+        for s in successors:
+            # Implementation of a negamax search
+            # We flip flop the score and a/b to change "perspective" of a player
+            score = -self.solve(s[0], -beta, -alpha,
+                                depth-1)
+
+            # Prune if we've found a better move now
             if score >= beta:
                 if self.max_depth == depth:
                     # Return column index if we're at root node
@@ -91,19 +109,24 @@ class AlphaBetaAgent(agent.Agent):
                 else:
                     return score
 
-            # reduce the alpha,beta window
+            # Reduce the a/b window
             if score > alpha:
                 alpha = score
                 best_col = s[1]
 
         # Return alpha or column index of best move if root
+        # Store the alpha before we exit
         self.trans_table[self.zb_hash(brd)] = alpha
         if self.max_depth == depth:
-            # Return column index if we're at root node
             return best_col
         else:
             return alpha
 
+    # Counts the number of moves for a given board
+    #
+    # PARAM [board.Board] brd: current board state
+    #
+    # RETURN [int]: number of moves played on the current board
     def num_moves(self, brd):
         n = 0
         for y in range(brd.h):
@@ -112,7 +135,17 @@ class AlphaBetaAgent(agent.Agent):
                     n += 1
         return n
 
+    # Find a line starting at x,y and going in direction dx,dy
+    #
+    # PARAM [int] x:  the x coordinate of the starting cell
+    # PARAM [int] y:  the y coordinate of the starting cell
+    # PARAM [int] dx: the step in the x direction
+    # PARAM [int] dy: the step in the y direction
+    #
+    # RETURN [(player_token, list of tuple coordinates (x,y))]:
+    #       Returns the player the line belongs to and the coordinates of the line
     def find_line(self, brd, x, y, dx, dy):
+        # Check board boundaries
         if ((x + (brd.n-1) * dx >= brd.w) or
                 (y + (brd.n-1) * dy < 0) or (y + (brd.n-1) * dy >= brd.h)):
             return (0, [])
@@ -122,55 +155,60 @@ class AlphaBetaAgent(agent.Agent):
         coords = [(x, y)]
         for i in range(1, brd.n):
             if brd.board[y + i*dy][x + i*dx] != player_token:
-                break
-            coords.append((x + i*dx, y + i*dy))
+                break  # Exit on a different token
+            coords.append((x + i*dx, y + i*dy))  # Add coordinate to list
         return (player_token, coords)
 
     def evaluate(self, brd):
         all_lines = []
+        dx_list = [1, 0, 1, 1]
+        dy_list = [0, 1, 1, -1]
         for x in range(brd.w):
             for y in range(brd.h):
-                checked = False
-                '''
-                for coords in all_lines:
-                    if (x, y) in coords[1]:
-                        # if we've evaluated this x,y before, ignore it. part of line(s) already calculated
-                        checked = True
-                '''
-                if not checked:
-                    # check directions
-                    # ignore anything out of bounds
-                    line = self.find_line(brd, x, y, 1, 0)  # Horizontal
-                    if line[0] != 0 and len(line[1]) != 1:
-                        all_lines.append(line)
-                    line = self.find_line(brd, x, y, 0, 1)  # Vertical
-                    if line[0] != 0 and len(line[1]) != 1:
-                        all_lines.append(line)
-                    line = self.find_line(brd, x, y, 1, 1)  # Diag up
-                    if line[0] != 0 and len(line[1]) != 1:
-                        all_lines.append(line)
-                    line = self.find_line(brd, x, y, 1, -1)  # Diag down
-                    if line[0] != 0 and len(line[1]) != 1:
-                        all_lines.append(line)
-        p1_val = 0
-        p2_val = 0
+                if brd.board[y][x] != 0:
+                    # Check every direction for every player coordinate
+                    # Also, I really like zip() :)
+                    for dx, dy in zip(dx_list, dy_list):
+                        line = self.find_line(brd, x, y, dx, dy)
+                        if len(line[1]) > 1:
+                            all_lines.append(line)
+        p1_score, p2_score = 0
         for line in all_lines:
-            # powers of 10^n-1 length of the line (line length 2 -> 10)
+            # We assign powers of 10 to the length-1 of a line
+            '''
+            length,n value
+            1, not in list of lines
+            2, 10
+            3, 100
+            etc.
+            '''
             n = int(math.pow(10, len(line[1])-1))
             if line[0] == 1:
-                p1_val += n
+                p1_score += n
             elif line[0] == 2:
-                p2_val += n
-        ret = (p1_val-p2_val)  # what we will return
+                p2_score += n
+        ret = (p1_score-p2_score)  # what we will return
+        # If max depth is even, we invert result
+        # p2 should be at a positive value when p2 is winning
+        # See design doc for more information
         if self.max_depth % 2 == 1:
-            ret *= -1  # if max depth is even, we invert result. p2 should be at a positive value when p2 is winning
+            ret *= -1
         return ret
 
+    # Initialize the Zobrist bytestring table
+    #
+    # PARAM [board.Board] brd: the board (used for dimensions)
+    #
+    # See design doc for more information
     def zobrist_init(self, brd):
         self.zb_table = [[(os.urandom(8), os.urandom(8))]
                          * brd.w for i in range(brd.h)]
         self.trans_table = {}
 
+    # Get the hash of a given board
+    #
+    # PARAM [board.Board] brd: the board state
+    # RETURN [int]: a Zobrist Hash of the given board state
     def zb_hash(self, brd):
         h = 0
         for y in range(0, brd.h):
@@ -180,29 +218,6 @@ class AlphaBetaAgent(agent.Agent):
                     h = h ^ int.from_bytes(
                         self.zb_table[y][x][piece-1], "little")
         return h
-    '''
-\    
- \   
-  \  
-   \
-    \
-     \
-                
-5 odd 
-1 5 %2 1
-2 4 %2 0
-1 3 %2 1
-2 2 %2 0
-1 1 %2 1
-2 0 %2 0 && 1
-
-4 even
-1 4 %2 0
-2 3 %2 1
-1 2 %2 0
-2 1 %2 1
-1 0 %2 0 && 0
-'''
 
     # Get the successors of the given board.
     #
@@ -229,5 +244,6 @@ class AlphaBetaAgent(agent.Agent):
             # Add board to list of successors
             succ.append((nb, col))
         return succ
+
 
 THE_AGENT = AlphaBetaAgent("Group21", 4)
