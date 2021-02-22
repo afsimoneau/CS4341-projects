@@ -23,7 +23,7 @@ max = 200
 w = 10
 h = 8
 t = 5
-d = 5
+d = 4
 for i in range(max):
     a1 = aba.AlphaBetaAgent("Group21",d)
     a2 = agent.RandomAgent("random2")
