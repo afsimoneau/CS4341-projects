@@ -16,7 +16,7 @@ outcome = g1.go()
 '''
 
 win = 0
-total = 10
+total = 5
 w = 7
 h = 6
 t = 4
