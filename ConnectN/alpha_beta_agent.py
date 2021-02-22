@@ -172,7 +172,8 @@ class AlphaBetaAgent(agent.Agent):
                         line = self.find_line(brd, x, y, dx, dy)
                         if len(line[1]) > 1:
                             all_lines.append(line)
-        p1_score, p2_score = 0
+        p1_score = 0
+        p2_score = 0
         for line in all_lines:
             # We assign powers of 10 to the length-1 of a line
             '''
