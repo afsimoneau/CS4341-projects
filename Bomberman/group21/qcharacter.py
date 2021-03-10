@@ -5,6 +5,8 @@ sys.path.insert(0, '../bomberman')
 from entity import CharacterEntity
 from colorama import Fore, Back
 
+import Node 
+
 class QCharacter(CharacterEntity):
 
     def do(self, wrld):
@@ -32,7 +34,11 @@ class QCharacter(CharacterEntity):
         '''
         
     def pathfind(self, wrld, entity):
-        pass
+
+        start = Node(None, (self.x, self.y))
+        #wronf 
+        path = search(wrld, start, wrld.exitcell)
+    return path
 
 '''
 ^
