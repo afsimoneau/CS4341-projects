@@ -1,4 +1,5 @@
 # This is necessary to find the main code
+from Bomberman.group21.qcharacter import QCharacter
 import sys
 sys.path.insert(0, '../../bomberman')
 sys.path.insert(1, '..')
@@ -13,7 +14,7 @@ sys.path.insert(1, '../groupNN')
 #from testcharacter import TestCharacter
 
 # Uncomment this if you want the interactive character
-from interactivecharacter import InteractiveCharacter
+# from interactivecharacter import InteractiveCharacter
 
 # Create the game
 g = Game.fromfile('map.txt')
@@ -27,10 +28,12 @@ g = Game.fromfile('map.txt')
 # ))
 
 # Uncomment this if you want the interactive character
-g.add_character(InteractiveCharacter("me", # name
-                                     "C",  # avatar
-                                     0, 0  # position
-))
+# g.add_character(InteractiveCharacter("me", # name
+#                                      "C",  # avatar
+#                                      0, 0  # position
+# ))
+
+g.add_character(QCharacter("ai","Q",0,0))
 
 # Run!
 
