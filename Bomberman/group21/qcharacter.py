@@ -41,6 +41,34 @@ class QCharacter(CharacterEntity):
     return path
 
 '''
+List of threat states
+Monster is close: linearly more important
+    Need to make a decision
+        de-vert from the path to get away
+        place a bomb to kill the monster
+Bomb goes off
+    need to check and see if the character could be killed by the explosion
+-------------------------------------------------
+List of non-threat states
+Monster is far: has some value, can be ignored
+    Continue on the calculated path
+Wall in our way
+    not a threat but need to de-vert from the path
+------------------------------------------------
+Epsilon Greedy
+Random probability
+    probability < e
+        pull a random action
+    otherwise
+        pull current-best action
+Exploration-exploitation tradeoff (epsilon is usually around 10%)
+    instruct the computer to explore (choose a random option with probability epsilon)
+    or
+    exploit (choose the best option which so far seems to be the best) the rmainder of the time
+
+'''
+
+'''
 ^
 |\ 
 O O
