@@ -1,22 +1,60 @@
 # This is necessary to find the main code
+from Bomberman.group21.astar import Solver
 import sys
 sys.path.insert(0, '../bomberman')
 # Import necessary stuff
 from entity import CharacterEntity
 from colorama import Fore, Back
 
-import Node 
+from astar import Node, Solver
+
 
 class QCharacter(CharacterEntity):
 
     def do(self, wrld):
-        pass
+        qCharNode = Node()
+        exitNode = None
+        '''
+        monsterNodes:list[Node] = []
+        bombNodes:list[Node] = []
+        explosionNodes:list[Node] = []
+        '''
+        for x in wrld.width():
+            for y in wrld.height():
+                t = Solver.what_is(x,y)
+                if t==Node.EXIT:
+                    exitNode = Node(t,None,x,y)
+                '''
+                elif t == Node.MONSTER:
+                    monsterNodes.append(Node(t,None,x,y))
+                elif t == Node.BOMB:
+                    bombNodes.append(Node(t,None,x,y))
+                elif t == Node.EXPLOSION:
+                    explosionNodes.append(Node(t,None,x,y))
+                '''
+
+
+        #find the exit
+        exitSolver = Solver(wrld,qCharNode,exitNode)
+        '''
+        #find all monsters
+        monsterSolvers:list[Solver] = []
+        for mNode in monsterNodes:
+            monsterSolvers.append(Solver(wrld,qCharNode,mNode))
+        #find all bombs
+        bombSolvers:list[Solver] = []
+        for bNode in bombNodes:
+            bombSolvers.append(Solver(wrld,qCharNode,bNode))
+        #find all explosions
+        explosionSolvers:list[Solver] = []
+        for eNode in explosionNodes:
+            explosionSolvers.append(Solver(wrld,qCharNode,eNode))
         '''
         
-        '''
-    
-    def score(self, wrld, depth):
-        '''
+        pass
+
+
+'''
         given an initial state
         evaluate best moves by considering 
         
@@ -32,13 +70,6 @@ class QCharacter(CharacterEntity):
             make a safe move when next outcome will contain a threat
         
         '''
-        
-    def pathfind(self, wrld, entity):
-
-        start = Node(None, (self.x, self.y))
-        #wronf 
-        path = search(wrld, start, wrld.exitcell)
-    return path
 
 '''
 List of threat states
