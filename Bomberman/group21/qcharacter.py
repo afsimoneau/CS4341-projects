@@ -1,11 +1,9 @@
 # This is necessary to find the main code
-from Bomberman.group21.astar import Solver
 import sys
 sys.path.insert(0, '../bomberman')
 # Import necessary stuff
 from entity import CharacterEntity
 from colorama import Fore, Back
-
 from astar import Node, Solver
 
 

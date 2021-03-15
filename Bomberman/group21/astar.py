@@ -1,6 +1,7 @@
-from Bomberman.bomberman.world import World
+import sys
 import heapq
-
+sys.path.insert(0, '../bomberman')
+from world import World
 
 class Node:
     EMPTY = 0
@@ -63,7 +64,7 @@ class Solver:
         elif self.wrld.characters_at(x, y):
             return Node.CHARACTER
 
-    def solve(self, wallClip=False) -> list[Node]:
+    def solve(self, wallClip=False) :
         '''
         1 2 3
         4 x 5
@@ -72,9 +73,9 @@ class Solver:
         # list of tuples in dx,dy form
         moves = [(-1, 1), (0, 1), (1, 1), (-1, 0),
                  (1, 0), (-1, -1), (0, -1), (1, -1)]
-        open: list[Node] = []
+        open = []
         heapq.heapify(open)
-        closed: list[Node] = []
+        closed = []
         heapq.heapify(closed)
 
         heapq.heappush(self.start)
@@ -87,7 +88,7 @@ class Solver:
                 return self.backtrack(current)
 
             # add all valid neighbors
-            neighbors: list[Node] = []
+            neighbors = []
             for dx, dy in moves:
                 x_val = current+dx
                 y_val = current+dy

@@ -1,11 +1,11 @@
 # This is necessary to find the main code
-from Bomberman.group21.qcharacter import QCharacter
 import sys
 sys.path.insert(0, '../../bomberman')
 sys.path.insert(1, '..')
 
 # Import necessary stuff
 from game import Game
+from qcharacter import QCharacter
 
 # TODO This is your code!
 sys.path.insert(1, '../groupNN')
