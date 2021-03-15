@@ -1,4 +1,5 @@
 # This is necessary to find the main code
+from Bomberman.group21.qcharacter import QCharacter
 import sys
 sys.path.insert(0, '../../bomberman')
 sys.path.insert(1, '..')
