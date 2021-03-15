@@ -7,6 +7,7 @@ sys.path.insert(1, '..')
 import random
 from game import Game
 from monsters.stupid_monster import StupidMonster
+from qcharacter import QCharacter
 
 # TODO This is your code!
 sys.path.insert(1, '../groupNN')
@@ -20,11 +21,7 @@ g.add_monster(StupidMonster("stupid", # name
                             3, 9      # position
 ))
 
-# TODO Add your character
-g.add_character(TestCharacter("me", # name
-                              "C",  # avatar
-                              0, 0  # position
-))
+g.add_character(QCharacter("ai","Q",0,0))
 
 # Run!
 g.go()

@@ -6,7 +6,7 @@ from world import World
 class Node:
     EMPTY = 0
     EXIT = 1
-    WAll = 2
+    WALL = 2
     BOMB = 3
     EXPLOSION = 4
     MONSTER = 5
@@ -17,7 +17,10 @@ class Node:
         self.x = x
         self.y = y
         self.parent = parent
-        self.path = parent.path[:]
+        if parent:
+            self.path = parent.path[:]
+        else:
+            self.path = []
         self.h = 0
         self.g = 0
 
@@ -29,6 +32,9 @@ class Node:
 
     def __gt__(self, other):
         return self.f() > other.f()
+    
+    def __repr__(self):
+        return f"({self.type}, {self.x}, {self.y})"
 
     def f(self):
         return self.h + self.g
@@ -54,7 +60,7 @@ class Solver:
         elif self.wrld.exit_at(x, y):
             return Node.EXIT
         elif self.wrld.wall_at(x, y):
-            return Node.WAll
+            return Node.WALL
         elif self.wrld.bomb_at(x, y):
             return Node.BOMB
         elif self.wrld.explosion_at(x, y):
@@ -64,7 +70,7 @@ class Solver:
         elif self.wrld.characters_at(x, y):
             return Node.CHARACTER
 
-    def solve(self, wallClip=False) :
+    def solve(self, wallClip=False, noMonsters = True) :
         '''
         1 2 3
         4 x 5
@@ -72,34 +78,44 @@ class Solver:
         '''
         # list of tuples in dx,dy form
         moves = [(-1, 1), (0, 1), (1, 1), (-1, 0),
-                 (1, 0), (-1, -1), (0, -1), (1, -1)]
+        (1, 0), (-1, -1), (0, -1), (1, -1)]
         open = []
         heapq.heapify(open)
         closed = []
         heapq.heapify(closed)
 
-        heapq.heappush(self.start)
+        heapq.heappush(open,self.start)
         while open:
+            
             current: Node = heapq.heappop(open)
+            
             closed.append(current)
 
             # target is found, get path
             if current.type == self.end.type:
+                #print("found path")
                 return self.backtrack(current)
 
             # add all valid neighbors
             neighbors = []
             for dx, dy in moves:
-                x_val = current+dx
-                y_val = current+dy
-
-                if x_val > self.wrld.width() or x_val < 0 or y_val > self.wrld.height() or y_val < 0:
+                x_val = current.x+dx
+                y_val = current.y+dy
+                
+                if x_val > self.wrld.width()-1 or x_val < 0 or y_val > self.wrld.height()-1 or y_val < 0:
                     continue  # out of bounds
+                
                 type = self.what_is(x_val, y_val)
-                if type == Node.WAll and not wallClip:
-                    continue  # can't clip through walls
+                if type == Node.WALL and not wallClip:
+                    continue #can't go through a wall
+
+                if type == Node.MONSTER and noMonsters:
+                    continue #avoiding monsters
                 n = Node(type, current, x_val, y_val)
                 neighbors.append(n)
+                    
+
+            #print(f"Node: {current} | Neighbors: {neighbors}")
             for next in neighbors:
                 if next in closed:
                     continue  # neighbor in closed list
@@ -108,4 +124,4 @@ class Solver:
                 if next in open:
                     continue  # neighbor in open list
                 heapq.heappush(open, next)
-            return None  # no path found
+        return None  # no path found

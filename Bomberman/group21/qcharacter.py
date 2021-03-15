@@ -10,46 +10,66 @@ from astar import Node, Solver
 class QCharacter(CharacterEntity):
 
     def do(self, wrld):
-        qCharNode = Node()
+        
+        qCharNode = Node(Node.CHARACTER,None,wrld.me(self).x,wrld.me(self).y)
+        print(qCharNode.y)
         exitNode = None
-        '''
-        monsterNodes:list[Node] = []
-        bombNodes:list[Node] = []
-        explosionNodes:list[Node] = []
-        '''
-        for x in wrld.width():
-            for y in wrld.height():
-                t = Solver.what_is(x,y)
+        
+        monsterNodes = []
+        bombNodes = []
+        
+        #explosionNodes:list[Node] = []
+        
+        exitSolver = Solver(wrld,qCharNode,None)
+        for x in range(wrld.width()):
+            for y in range(wrld.height()):
+                t = exitSolver.what_is(x,y)
+                
                 if t==Node.EXIT:
-                    exitNode = Node(t,None,x,y)
-                '''
+                    exitSolver.end = Node(t,None,x,y)
                 elif t == Node.MONSTER:
+                    print(f"{t},{x},{y}")
                     monsterNodes.append(Node(t,None,x,y))
                 elif t == Node.BOMB:
                     bombNodes.append(Node(t,None,x,y))
-                elif t == Node.EXPLOSION:
-                    explosionNodes.append(Node(t,None,x,y))
-                '''
+                # elif t == Node.EXPLOSION:
+                #     explosionNodes.append(Node(t,None,x,y))
 
-
+        print(monsterNodes)
         #find the exit
-        exitSolver = Solver(wrld,qCharNode,exitNode)
-        '''
-        #find all monsters
-        monsterSolvers:list[Solver] = []
-        for mNode in monsterNodes:
+        exitSolver.solve()
+        monsterSolvers = []
+        for mNode  in monsterNodes:
             monsterSolvers.append(Solver(wrld,qCharNode,mNode))
-        #find all bombs
-        bombSolvers:list[Solver] = []
-        for bNode in bombNodes:
-            bombSolvers.append(Solver(wrld,qCharNode,bNode))
-        #find all explosions
-        explosionSolvers:list[Solver] = []
-        for eNode in explosionNodes:
-            explosionSolvers.append(Solver(wrld,qCharNode,eNode))
-        '''
+
+        bigBrainTime = False #this is true when we need to use big brain to not die
+        for mSolve in monsterSolvers:
+            mSolve.solve(noMonsters=False)
+            #print(f"mSolve: {mSolve.path}")
+            if len(mSolve.path)<=5:
+                print("big brain time")
+                bigBrainTime=True #plz do not die
+
         
-        pass
+        #print(f"path: {exitSolver.path}")
+        if exitSolver.path:
+            for n in exitSolver.path:
+                self.set_cell_color(n.x, n.y, Fore.RED + Back.GREEN)
+            if bigBrainTime:
+                #TODO: engage decision process to survive
+                self.Q_function()
+            else:
+                # do not engage big brain, we use monke pathfinding
+                dx = exitSolver.path[1].x-exitSolver.path[0].x
+                dy = exitSolver.path[1].y-exitSolver.path[0].y
+                #print(f"move: {dx},{dy}")
+                self.move(dx,dy)
+        else:
+            print("no path")
+            pass
+    
+    def Q_function(self):
+        return None
 
 
 '''
