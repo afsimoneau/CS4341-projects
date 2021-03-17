@@ -1,7 +1,8 @@
+from world import World
 import sys
 import heapq
 sys.path.insert(0, '../bomberman')
-from world import World
+
 
 class Node:
     EMPTY = 0
@@ -32,7 +33,7 @@ class Node:
 
     def __gt__(self, other):
         return self.f() > other.f()
-    
+
     def __repr__(self):
         return f"({self.type}, {self.x}, {self.y})"
 
@@ -41,13 +42,26 @@ class Node:
 
 
 class Solver:
+    NW = (-1, -1)
+    N = (0, -1)
+    NE = (1, -1)
+    W = (-1, 0)
+    E = (1, 0)
+    SW = (-1, 1)
+    S = (0, 1)
+    SE = (1, 1)
+
+    directions = [NW, N, NE, W, E, SW, S, SE]
+
     def __init__(self, wrld: World, start: Node, end: Node):
         self.wrld = wrld
         self.start = start
         self.end = end
-        self.path = []
+        self.path = None
 
     def backtrack(self, finish: Node):
+        if self.path is None:
+            self.path = []
         node = finish
         while node is not None:
             self.path.append(node)
@@ -70,25 +84,38 @@ class Solver:
         elif self.wrld.characters_at(x, y):
             return Node.CHARACTER
 
-    def solve(self, wallClip=False, noMonsters = True) :
+    def valid_action(self, coords, wallClip, noMonsters):
+        #print(f"valid action start {coords[0]} {coords[1]}")
+        if coords[0] > self.wrld.width()-1 or coords[0] < 0 or coords[1] > self.wrld.height()-1 or coords[1] < 0:
+            return False  # out of bounds
+        #print("valid action not out of bounds")
+        type = self.what_is(coords[0], coords[1])
+        if type == Node.WALL and not wallClip:
+            return False  # can't go through a wall
+        #print("valid action not wall")
+        if type == Node.MONSTER and noMonsters:
+            return False  # avoiding monsters
+        #print("valid action monster")
+        #aprint(f"({coords[0]}, {coords[1]}) valid")
+        return True
+
+    def solve(self, wallClip=False, noMonsters=True):
         '''
         1 2 3
         4 x 5
         6 7 8
         '''
         # list of tuples in dx,dy form
-        moves = [(-1, 1), (0, 1), (1, 1), (-1, 0),
-        (1, 0), (-1, -1), (0, -1), (1, -1)]
+
         open = []
         heapq.heapify(open)
         closed = []
         heapq.heapify(closed)
 
-        heapq.heappush(open,self.start)
+        heapq.heappush(open, self.start)
         while open:
-            
             current: Node = heapq.heappop(open)
-            
+
             closed.append(current)
 
             # target is found, get path
@@ -98,22 +125,15 @@ class Solver:
 
             # add all valid neighbors
             neighbors = []
-            for dx, dy in moves:
+            for dx, dy in self.directions:
                 x_val = current.x+dx
                 y_val = current.y+dy
-                
-                if x_val > self.wrld.width()-1 or x_val < 0 or y_val > self.wrld.height()-1 or y_val < 0:
-                    continue  # out of bounds
-                
-                type = self.what_is(x_val, y_val)
-                if type == Node.WALL and not wallClip:
-                    continue #can't go through a wall
 
-                if type == Node.MONSTER and noMonsters:
-                    continue #avoiding monsters
-                n = Node(type, current, x_val, y_val)
+                if not self.valid_action((x_val, y_val), wallClip, noMonsters):
+                    continue # skip invalid actions
+    
+                n = Node(self.what_is(x_val,y_val), current, x_val, y_val)
                 neighbors.append(n)
-                    
 
             #print(f"Node: {current} | Neighbors: {neighbors}")
             for next in neighbors:
