@@ -21,7 +21,7 @@ g.add_monster(StupidMonster("stupid", # name
                             3, 9      # position
 ))
 
-g.add_character(QCharacter("ai","Q",0,0))
+g.add_character(QCharacter("ai","Q",0,0,{}))
 
 # Run!
 g.go()

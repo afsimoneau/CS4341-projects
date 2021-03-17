@@ -33,7 +33,7 @@ g = Game.fromfile('v1-minimap.txt')
 #                                      0, 0  # position
 # ))
 
-g.add_character(QCharacter("ai","Q",0,0))
+g.add_character(QCharacter("ai","Q",0,0,{}))
 
 # Run!
 
@@ -41,4 +41,4 @@ g.add_character(QCharacter("ai","Q",0,0))
 # g.go(0)
 
 # Use this if you want to proceed automatically
-g.go(1)
+g.go()

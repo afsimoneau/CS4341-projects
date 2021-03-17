@@ -33,7 +33,7 @@ g = Game.fromfile('map.txt')
 #                                      0, 0  # position
 # ))
 
-g.add_character(QCharacter("ai","Q",0,0))
+g.add_character(QCharacter("ai","Q",0,0,{}))
 
 # Run!
 
