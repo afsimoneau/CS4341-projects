@@ -53,43 +53,37 @@ class Solver:
 
     directions = [NW, N, NE, W, E, SW, S, SE]
 
-    def __init__(self, wrld: World, start: Node, end: Node):
-        self.wrld = wrld
-        self.start = start
-        self.end = end
-        self.path = None
-
-    def backtrack(self, finish: Node):
-        if self.path is None:
-            self.path = []
+    def backtrack(finish: Node):
+        path = []
         node = finish
         while node is not None:
-            self.path.append(node)
+            path.append(node)
             node = node.parent
-        self.path.reverse()
+        path.reverse()
+        return path
 
-    def what_is(self, x, y) -> int:
-        if self.wrld.empty_at(x, y):
+    def what_is(wrld, x, y) -> int:
+        if wrld.empty_at(x, y):
             return Node.EMPTY
-        elif self.wrld.exit_at(x, y):
+        elif wrld.exit_at(x, y):
             return Node.EXIT
-        elif self.wrld.wall_at(x, y):
+        elif wrld.wall_at(x, y):
             return Node.WALL
-        elif self.wrld.bomb_at(x, y):
+        elif wrld.bomb_at(x, y):
             return Node.BOMB
-        elif self.wrld.explosion_at(x, y):
+        elif wrld.explosion_at(x, y):
             return Node.EXPLOSION
-        elif self.wrld.monsters_at(x, y):
+        elif wrld.monsters_at(x, y):
             return Node.MONSTER
-        elif self.wrld.characters_at(x, y):
+        elif wrld.characters_at(x, y):
             return Node.CHARACTER
 
-    def valid_action(self, coords, wallClip, noMonsters):
+    def valid_action(wrld, coords, wallClip, noMonsters):
         #print(f"valid action start {coords[0]} {coords[1]}")
-        if coords[0] > self.wrld.width()-1 or coords[0] < 0 or coords[1] > self.wrld.height()-1 or coords[1] < 0:
+        if coords[0] > wrld.width()-1 or coords[0] < 0 or coords[1] > wrld.height()-1 or coords[1] < 0:
             return False  # out of bounds
         #print("valid action not out of bounds")
-        type = self.what_is(coords[0], coords[1])
+        type = Solver.what_is(wrld,coords[0], coords[1])
         if type == Node.WALL and not wallClip:
             return False  # can't go through a wall
         #print("valid action not wall")
@@ -99,7 +93,7 @@ class Solver:
         #aprint(f"({coords[0]}, {coords[1]}) valid")
         return True
 
-    def solve(self, wallClip=False, noMonsters=True):
+    def solve_path(wrld,start,end, wallClip=False, noMonsters=True):
         '''
         1 2 3
         4 x 5
@@ -112,27 +106,27 @@ class Solver:
         closed = []
         heapq.heapify(closed)
 
-        heapq.heappush(open, self.start)
+        heapq.heappush(open, start)
         while open:
             current: Node = heapq.heappop(open)
 
             closed.append(current)
 
             # target is found, get path
-            if current.type == self.end.type:
+            if current.type == end.type:
                 #print("found path")
-                return self.backtrack(current)
+                return Solver.backtrack(current)
 
             # add all valid neighbors
             neighbors = []
-            for dx, dy in self.directions:
+            for dx, dy in Solver.directions:
                 x_val = current.x+dx
                 y_val = current.y+dy
 
-                if not self.valid_action((x_val, y_val), wallClip, noMonsters):
+                if not Solver.valid_action(wrld,(x_val, y_val), wallClip, noMonsters):
                     continue # skip invalid actions
     
-                n = Node(self.what_is(x_val,y_val), current, x_val, y_val)
+                n = Node(Solver.what_is(wrld,x_val,y_val), current, x_val, y_val)
                 neighbors.append(n)
 
             #print(f"Node: {current} | Neighbors: {neighbors}")
@@ -140,7 +134,8 @@ class Solver:
                 if next in closed:
                     continue  # neighbor in closed list
                 next.g = current.g+1
-                next.h = (next.x-self.end.x)**2 + (next.y-self.end.y)**2
+                next.h = 0 # the heuristic below is bad
+                #next.h = (next.x-end.x)**2 + (next.y-end.y)**2
                 if next in open:
                     continue  # neighbor in open list
                 heapq.heappush(open, next)
