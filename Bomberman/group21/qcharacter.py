@@ -113,7 +113,7 @@ class QCharacter(CharacterEntity):
         print(s_clone.monsters)
         for m in s_clone.monsters.values():
             print(m)
-            dangerPath = Solver.solve_path(self.) #need q char node from above. add to self? TODO!!!!!!!!!!!
+            dangerPath = Solver.solve_path() #need q char node from above. add to self? TODO!!!!!!!!!!!
             worst_dx = 0 # need to find "worst possible move" for a given m monster
             worst_dy = 0
             m[0].move(worst_dx,worst_dy) #move each monster to the worst possible location 
