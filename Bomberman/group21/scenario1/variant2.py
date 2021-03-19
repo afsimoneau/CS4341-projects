@@ -8,7 +8,7 @@ import random
 from game import Game
 from monsters.stupid_monster import StupidMonster
 from qcharacter import QCharacter
-
+import numpy as np
 # TODO This is your code!
 sys.path.insert(1, '../groupNN')
 from testcharacter import TestCharacter
@@ -21,7 +21,7 @@ g.add_monster(StupidMonster("stupid", # name
                             3, 9      # position
 ))
 
-g.add_character(QCharacter("ai","Q",0,0,{}))
+g.add_character(QCharacter("ai","Q",0,0,np.zeros(3)))
 
 # Run!
 g.go()
