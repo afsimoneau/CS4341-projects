@@ -8,7 +8,7 @@ from game import Game
 from qcharacter import QCharacter
 
 # TODO This is your code!
-sys.path.insert(1, '../groupNN')
+sys.path.insert(1, '../group21')
 
 # Uncomment this if you want the empty test character
 #from testcharacter import TestCharacter
