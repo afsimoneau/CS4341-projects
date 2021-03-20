@@ -14,7 +14,7 @@ from testcharacter import TestCharacter
 
 
 wins = 0
-total = 25
+total = 100
 for i in range(total):
     # Create the game
     random.seed() # TODO Change this if you want different random choices
@@ -45,6 +45,8 @@ for i in range(total):
 
     # Run!
     g.go(1)
+    if g.world.scores["ai"]>0:
+        wins+=1
 
     with open("weights1-3.txt", "w") as writer:
         for w in weights:

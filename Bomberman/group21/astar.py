@@ -78,7 +78,7 @@ class Solver:
         elif wrld.characters_at(x, y):
             return Node.CHARACTER
 
-    def valid_action(wrld, coords, wallClip, noMonsters):
+    def valid_action(wrld, coords, wallClip, noMonsters, findExplosion):
         #print(f"valid action start {coords[0]} {coords[1]}")
         if coords[0] > wrld.width()-1 or coords[0] < 0 or coords[1] > wrld.height()-1 or coords[1] < 0:
             return False  # out of bounds
@@ -90,10 +90,12 @@ class Solver:
         if type == Node.MONSTER and noMonsters:
             return False  # avoiding monsters
         #print("valid action monster")
+        if type == Node.EXPLOSION and not findExplosion:
+            return False  # dont die
         #aprint(f"({coords[0]}, {coords[1]}) valid")
         return True
 
-    def solve_path(wrld,start,end, wallClip=False, noMonsters=True):
+    def solve_path(wrld,start,end, wallClip=False, noMonsters=True,findExplosion = False):
         '''
         1 2 3
         4 x 5
@@ -123,11 +125,17 @@ class Solver:
                 x_val = current.x+dx
                 y_val = current.y+dy
 
-                if not Solver.valid_action(wrld,(x_val, y_val), wallClip, noMonsters):
+                if not Solver.valid_action(wrld,(x_val, y_val), wallClip, noMonsters,findExplosion):
                     continue # skip invalid actions
     
                 n = Node(Solver.what_is(wrld,x_val,y_val), current, x_val, y_val)
                 neighbors.append(n)
+                
+                if not noMonsters and wrld.monsters_at(x_val,y_val) is not None:
+                    # sometimes a bomb/exit and monster "stack" so we double check if there's a neighbor monster
+                    m = Node(Node.MONSTER, current, x_val, y_val)
+                    neighbors.append(m)
+                    
 
             #print(f"Node: {current} | Neighbors: {neighbors}")
             for next in neighbors:
@@ -136,7 +144,7 @@ class Solver:
                 next.g = current.g+1
                 next.h = 0 
                 if next.type==Node.WALL:
-                    next.h +=100
+                    next.h +=1000
                 # the heuristic below is bad
                 #next.h = (next.x-end.x)**2 + (next.y-end.y)**2
                 if next in open:
