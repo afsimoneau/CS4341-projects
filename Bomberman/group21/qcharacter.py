@@ -70,11 +70,11 @@ class QCharacter(CharacterEntity):
                 # print(f"{t},{x},{y}")
                 if t == Node.EXIT:
                     self.exitNode = Node(t, None, x, y)
-                if t == Node.MONSTER:
+                elif t == Node.MONSTER:
                     self.monsterNodes.append(Node(t, None, x, y))
-                if t == Node.BOMB:
+                elif t == Node.BOMB:
                     self.bombNode = Node(t, None, x, y)
-                if t == Node.EXPLOSION:
+                elif t == Node.EXPLOSION:
                     self.explosionNodes.append(
                         Node(t, None, x, y))
 
@@ -94,14 +94,7 @@ class QCharacter(CharacterEntity):
             if self.monsterPath is None or len(mPath) < len(self.monsterPath):
                 self.monsterPath = mPath
             # pythagorean theorem. if we're on the buffer zone of the monster, we engage the ai
-            rng = 2
-            for m_names in wrld.monsters_at(mNode.x,mNode.y):
-                name = m_names.name
-                if name=="aggressive" or name == "selfpreserving":
-                    rng = 4
-            
-            
-            if np.abs(mNode.x-self.x) <= rng and np.abs(mNode.y-self.y) <=rng:
+            if len(mPath) <= 5:
                 print("big brain time")
                 bigBrainTime = True  # plz do not die
 
@@ -113,13 +106,13 @@ class QCharacter(CharacterEntity):
             #     self.set_cell_color(n.x, n.y, Fore.RED + Back.GREEN)
             if bigBrainTime:
                 # TODO:- - - - - - - - - - - - - - - - - - - - - - - - -
-                #input()
+
                 print("weights:")
                 print(self.weights)
                 # check all actions for Q_approx
                 # order by max q value
                 all_q = self.Q_max_a(wrld, qCharNode)
-                #print(all_q)
+                print(all_q)
                 # take the action with the highest q value
                 # get the first element of all_q, then take the action tuple, then get dx/dy from it
                 self.move(all_q[0][0][0], all_q[0][0][1])
@@ -176,18 +169,9 @@ class QCharacter(CharacterEntity):
         # for path to exit, place bomb at first empty node before a wall (when using wall clip)
 
         # create/set up s' and state information
-        copy = SensedWorld.from_world(wrld)
-        copy.me(self).move(action[0],action[1])
-        
-        s_prime = copy.next()  # tuple (new_world, events)
-        
-        for e in s_prime[1]:
-            if e.tpe == Event.BOMB_HIT_CHARACTER:
-                return -10
-            if e.tpe == Event.CHARACTER_KILLED_BY_MONSTER:
-                return -10
-            if e.tpe == Event.CHARACTER_FOUND_EXIT:
-                return 100
+        self.move(action[0], action[1])
+
+        s_prime = wrld.next()  # tuple (new_world, events)
 
         s_prime_qCharNode = Node(Node.CHARACTER, None,
                                  s_prime[0].me(self).x, s_prime[0].me(self).y)
@@ -203,11 +187,11 @@ class QCharacter(CharacterEntity):
                 # print(f"{t},{x},{y}")
                 if t == Node.EXIT:
                     s_prime_exitNode = Node(t, None, x, y)
-                if t == Node.MONSTER:
+                elif t == Node.MONSTER:
                     s_prime_monsterNodes.append(Node(t, None, x, y))
-                if t == Node.BOMB:
+                elif t == Node.BOMB:
                     s_prime_bombNode = Node(t, None, x, y)
-                if t == Node.EXPLOSION:
+                elif t == Node.EXPLOSION:
                     s_prime_explosionNodes.append(Node(t, None, x, y))
 
         # begin q approximation value calculations -----
@@ -245,7 +229,6 @@ class QCharacter(CharacterEntity):
         '''
         exit node       [1]
         monster node    [1]
-        
         [mx,my] dot [ex,ey]
         -------------------
         ||CM|| * ||CE||
@@ -253,25 +236,10 @@ class QCharacter(CharacterEntity):
         #print(self.exitPath)
         exit_vector = np.array([self.exitPath[1].x,self.exitPath[1].y])
         monster_vector = np.array([self.monsterPath[1].x,self.monsterPath[1].y])
-        f_product = (monster_vector.dot(exit_vector))/(len(monster_vector)*len(exit_vector))
-        if f_product>1:
-            f_product=1
-        elif f_product<1:
-            f_product=-1
+        f_product = (np.dot(monster_vector, exit_vector))/(len(monster_vector)*len(exit_vector))
         self.previousF[action].append(f_product)
-        q_value+= self.weights[3]*f_product
-        
-        
-        #TODO: do this here
-        
-        
-        
-        
-        
-        
-        
-        
-        print(f"a: ({action[0]}, {action[1]}) | f: {f_exit}, {f_mon}, {f_product} | q: {q_value}")
+        q_value += self.weights[3]*f_product
+        print(f"f: {f_exit}, {f_mon}, {f_product}")
         
         
 
@@ -296,16 +264,44 @@ class QCharacter(CharacterEntity):
         self.previousQ = 0
         self.previousF = {}
 
+    #find character.x to wall distance
+    def xWall_distance(self, wrld, qCharNode):
+        wall_loc = self.find_wall(wrld, qCharNode)
+        distance = wall_loc[0] - qCharNode.x
+
+    #find character.y to wall distance
+    def yWall_distance(self, wrld, qCharNode):
+        wall_loc = self.find_wall(wrld, qCharNode)
+        distance = wall_loc[1] - qCharNode.y
+
+    #find wall with in the range of character
+    #Need to check for out of bounds
+    #split in terms of positive and negative x/y
+    def find_wall(self, wrld, qCharNode):
+'''
+four while loops
++x
+-x
++y
+-y
+'''
+        for x in range(-4, 4):
+        
+        for y in range(-4, 4):
+            if wrld.wall_at(qCharNode.x + x, qCharNode.y + y):
+                wall_loc = (qCharNode.x + x, qCharNode.y + y)
+                
 
 '''
 1 2 3
 4 x 5    9 actions with bomb 
 6 7 8
 
+
 xxxxxxx
 x-----x
+xWW---x
 x-----x
-x--m--x
 x-----x
 x-----x
 xxxxxxx
