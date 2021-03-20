@@ -96,11 +96,11 @@ class QCharacter(CharacterEntity):
                 bigBrainTime = True  # plz do not die
                 
         for eNode in self.explosionNodes:
-            ePath = Solver.solve_path(wrld, qCharNode, eNode,findExplosion = True)
+            ePath = Solver.solve_path(wrld, qCharNode, eNode, findExplosion = True)
             if self.explosionPath is None or len(ePath) < len(self.explosionPath):
                 self.explosionPath = ePath
             
-            if len(self.explosionPath)<=2:
+            if len(self.explosionPath) <= 2:
                 bigBrainTime = True  # plz do not die
 
         #print(f"path: {exitSolver.path}")
@@ -326,9 +326,7 @@ class QCharacter(CharacterEntity):
         print(f"reward:{reward}")
         delta_correction = (reward+(self.gamma*all_q[0][1]))-self.previousQ
         for i, w in enumerate(self.weights):
-            self.weights[i] = self.weights[i] + \
-                (self.alpha*delta_correction *
-                 self.previousF[self.previousAction][i])
+            self.weights[i] = self.weights[i] + (self.alpha*delta_correction * self.previousF[self.previousAction][i])
 
         self.adjustWeights = False
         self.previousAction = (0, 0)
