@@ -36,8 +36,8 @@ class QCharacter(CharacterEntity):
         self.explosionPath = None
 
         # q specific data
-        self.alpha = .1
-        self.gamma = .5
+        self.alpha = .01
+        self.gamma = .75
         self.adjustWeights = False
         self.previousAction = (0, 0)
         self.previousScore = 0
@@ -70,11 +70,11 @@ class QCharacter(CharacterEntity):
                 # print(f"{t},{x},{y}")
                 if t == Node.EXIT:
                     self.exitNode = Node(t, None, x, y)
-                elif t == Node.MONSTER:
+                if t == Node.MONSTER:
                     self.monsterNodes.append(Node(t, None, x, y))
-                elif t == Node.BOMB:
+                if t == Node.BOMB:
                     self.bombNode = Node(t, None, x, y)
-                elif t == Node.EXPLOSION:
+                if t == Node.EXPLOSION:
                     self.explosionNodes.append(
                         Node(t, None, x, y))
 
@@ -94,7 +94,14 @@ class QCharacter(CharacterEntity):
             if self.monsterPath is None or len(mPath) < len(self.monsterPath):
                 self.monsterPath = mPath
             # pythagorean theorem. if we're on the buffer zone of the monster, we engage the ai
-            if len(mPath) <= 5:
+            rng = 2
+            for m_names in wrld.monsters_at(mNode.x,mNode.y):
+                name = m_names.name
+                if name=="aggressive" or name == "selfpreserving":
+                    rng = 4
+            
+            
+            if np.abs(mNode.x-self.x) <= rng and np.abs(mNode.y-self.y) <=rng:
                 print("big brain time")
                 bigBrainTime = True  # plz do not die
 
@@ -106,13 +113,13 @@ class QCharacter(CharacterEntity):
             #     self.set_cell_color(n.x, n.y, Fore.RED + Back.GREEN)
             if bigBrainTime:
                 # TODO:- - - - - - - - - - - - - - - - - - - - - - - - -
-
+                #input()
                 print("weights:")
                 print(self.weights)
                 # check all actions for Q_approx
                 # order by max q value
                 all_q = self.Q_max_a(wrld, qCharNode)
-                print(all_q)
+                #print(all_q)
                 # take the action with the highest q value
                 # get the first element of all_q, then take the action tuple, then get dx/dy from it
                 self.move(all_q[0][0][0], all_q[0][0][1])
@@ -169,9 +176,18 @@ class QCharacter(CharacterEntity):
         # for path to exit, place bomb at first empty node before a wall (when using wall clip)
 
         # create/set up s' and state information
-        self.move(action[0], action[1])
-
-        s_prime = wrld.next()  # tuple (new_world, events)
+        copy = SensedWorld.from_world(wrld)
+        copy.me(self).move(action[0],action[1])
+        
+        s_prime = copy.next()  # tuple (new_world, events)
+        
+        for e in s_prime[1]:
+            if e.tpe == Event.BOMB_HIT_CHARACTER:
+                return -10
+            if e.tpe == Event.CHARACTER_KILLED_BY_MONSTER:
+                return -10
+            if e.tpe == Event.CHARACTER_FOUND_EXIT:
+                return 100
 
         s_prime_qCharNode = Node(Node.CHARACTER, None,
                                  s_prime[0].me(self).x, s_prime[0].me(self).y)
@@ -187,11 +203,11 @@ class QCharacter(CharacterEntity):
                 # print(f"{t},{x},{y}")
                 if t == Node.EXIT:
                     s_prime_exitNode = Node(t, None, x, y)
-                elif t == Node.MONSTER:
+                if t == Node.MONSTER:
                     s_prime_monsterNodes.append(Node(t, None, x, y))
-                elif t == Node.BOMB:
+                if t == Node.BOMB:
                     s_prime_bombNode = Node(t, None, x, y)
-                elif t == Node.EXPLOSION:
+                if t == Node.EXPLOSION:
                     s_prime_explosionNodes.append(Node(t, None, x, y))
 
         # begin q approximation value calculations -----
@@ -229,6 +245,7 @@ class QCharacter(CharacterEntity):
         '''
         exit node       [1]
         monster node    [1]
+        
         [mx,my] dot [ex,ey]
         -------------------
         ||CM|| * ||CE||
@@ -237,9 +254,24 @@ class QCharacter(CharacterEntity):
         exit_vector = np.array([self.exitPath[1].x,self.exitPath[1].y])
         monster_vector = np.array([self.monsterPath[1].x,self.monsterPath[1].y])
         f_product = (monster_vector.dot(exit_vector))/(len(monster_vector)*len(exit_vector))
+        if f_product>1:
+            f_product=1
+        elif f_product<1:
+            f_product=-1
         self.previousF[action].append(f_product)
         q_value+= self.weights[3]*f_product
-        print(f"f: {f_exit}, {f_mon}, {f_product}")
+        
+        
+        #TODO: do this here
+        
+        
+        
+        
+        
+        
+        
+        
+        print(f"a: ({action[0]}, {action[1]}) | f: {f_exit}, {f_mon}, {f_product} | q: {q_value}")
         
         
 
