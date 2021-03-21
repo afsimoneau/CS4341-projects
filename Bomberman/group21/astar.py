@@ -144,7 +144,7 @@ class Solver:
                 next.g = current.g+1
                 next.h = 0 
                 if next.type==Node.WALL:
-                    next.h +=1000
+                    next.h +=10
                 # the heuristic below is bad
                 #next.h = (next.x-end.x)**2 + (next.y-end.y)**2
                 if next in open:

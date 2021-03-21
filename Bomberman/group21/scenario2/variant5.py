@@ -8,13 +8,14 @@ import random
 from game import Game
 from monsters.stupid_monster import StupidMonster
 from monsters.selfpreserving_monster import SelfPreservingMonster
+from qcharacter import QCharacter
 
 # TODO This is your code!
-sys.path.insert(1, '../groupNN')
+sys.path.insert(1, '../group21')
 from testcharacter import TestCharacter
 
 # Create the game
-random.seed(123) # TODO Change this if you want different random choices
+random.seed() # TODO Change this if you want different random choices
 g = Game.fromfile('map.txt')
 g.add_monster(StupidMonster("stupid", # name
                             "S",      # avatar
@@ -26,11 +27,25 @@ g.add_monster(SelfPreservingMonster("aggressive", # name
                                     2             # detection range
 ))
 
-# TODO Add your character
-g.add_character(TestCharacter("me", # name
-                              "C",  # avatar
-                              0, 0  # position
-))
+# # TODO Add your character
+# g.add_character(TestCharacter("me", # name
+#                               "C",  # avatar
+#                               0, 0  # position
+# ))
+with open("weights2-4.txt", "r") as reader:
+    lines = reader.readlines()
+reader.close()
+weights = []
+for line in lines:
+    weights.append(float(line))
+    
+q_char = QCharacter("ai","Q",0,0,weights,wallClip=True)
+g.add_character(q_char)
 
 # Run!
-g.go()
+g.go(1)
+with open("weights2-4.txt", "w") as writer:
+    for w in weights:
+        writer.write(str(w))
+        writer.write(str("\n"))
+writer.close()

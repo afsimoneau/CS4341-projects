@@ -23,6 +23,7 @@ class QCharacter(CharacterEntity):
         self.train = train
         self.weights = weights
         self.wallClip = wallClip
+        self.bombBrainDelay = 0
 
         # changes across runs
         self.exitNode = None
@@ -43,6 +44,7 @@ class QCharacter(CharacterEntity):
         self.previousScore = 0
         self.previousQ = 0
         self.previousF = {}
+        
 
     def reset(self):
         self.exitNode = None
@@ -54,12 +56,15 @@ class QCharacter(CharacterEntity):
         self.bombPath = None
         self.monsterPath = None
         self.explosionPath = None
+        if self.bombBrainDelay != 0:
+            self.bombBrainDelay-=1
+        
 
     def do(self, wrld):
         qCharNode = Node(Node.CHARACTER, None,
                          wrld.me(self).x, wrld.me(self).y)
 
-        if self.adjustWeights and self.train:
+        if self.adjustWeights and self.train and self.previousAction in self.previousF:
             self.weight_adjust_helper(wrld, qCharNode)
 
         self.reset()
@@ -70,6 +75,9 @@ class QCharacter(CharacterEntity):
         self.monsterNodes = things[2]
         self.explosionNodes = things[3]
         
+        if self.bombNode is None:
+            self.bombBrainDelay = 0
+        
         # print(monsterNodes)
         # find paths to points
         # determine big brain time
@@ -79,7 +87,7 @@ class QCharacter(CharacterEntity):
         if self.bombNode is not None:
             self.bombPath = Solver.solve_path(wrld, qCharNode, self.bombNode)
             # TODO: bombs explode in a cross pattern???
-            if np.abs(self.bombNode.x-self.x) < 4 or np.abs(self.bombNode.y-self.y) < 4:
+            if (np.abs(self.bombNode.x-self.x) < 4 or np.abs(self.bombNode.y-self.y) < 4) and self.bombBrainDelay==0:
                 bigBrainTime = True  # we are on path of bomb
         for mNode in self.monsterNodes:
             mPath = Solver.solve_path(wrld, qCharNode, mNode, noMonsters=False)
@@ -90,9 +98,8 @@ class QCharacter(CharacterEntity):
             for m_names in wrld.monsters_at(mNode.x,mNode.y):
                 name = m_names.name
                 if name=="aggressive" or name == "selfpreserving":
-                    rng = 3
-            if np.abs(mNode.x-self.x) <= rng and np.abs(mNode.y-self.y) <=rng:
-                print("big brain time")
+                    rng = 4
+            if self.x in range(mNode.x-rng,mNode.x+rng) and self.y in range(mNode.y-rng,mNode.y+rng):
                 bigBrainTime = True  # plz do not die
                 
         for eNode in self.explosionNodes:
@@ -103,22 +110,33 @@ class QCharacter(CharacterEntity):
             if len(self.explosionPath) <= 2:
                 bigBrainTime = True  # plz do not die
 
-        #print(f"path: {exitSolver.path}")
+        # print(f"path: {exitSolver.path}")
         # input("pause")  # comment this if you don't want to pause
         # time.sleep(.5)
         if self.exitPath:
             # for n in self.exitPath:
             #     self.set_cell_color(n.x, n.y, Fore.RED + Back.GREEN)
             
-            if self.exitPath[1].type == Node.WALL and self.bombNode is None:
+            if (len(self.exitPath)>=4):
+                wallInRange = False
+                for i in range(1,4):
+                    if self.exitPath[i].type == Node.WALL:
+                        wallInRange = True
+                if wallInRange and self.bombNode is None:
+                    self.place_bomb()
+                    self.bombBrainDelay = 8
+                    return
+            '''    
+            if self.monsterPath is not None and len(self.monsterPath)<4:
                 self.place_bomb()
-                return
-            
+                self.bombBrainDelay = 2
+            '''
             if bigBrainTime:
                 # TODO:- - - - - - - - - - - - - - - - - - - - - - - - -
 
                 print("weights:")
                 print(self.weights)
+                self.previousF = {}
                 # check all actions for Q_approx
                 # order by max q value
                 all_q = self.Q_max_a(wrld, qCharNode)
@@ -134,8 +152,10 @@ class QCharacter(CharacterEntity):
                 self.previousAction = all_q[0][0]
                 self.previousScore = wrld.scores[self.name]
                 self.previousQ = all_q[0][1]
-
-                # for bomb logic, add a bomb at the first adjacent node on the path where
+                
+                if self.monsterPath is not None and len(self.monsterPath)<=4:
+                    self.place_bomb()
+                    self.bombBrainDelay = 2
 
             else:
                 # do not engage big brain, we use small brain monke pathfinding
@@ -217,7 +237,7 @@ class QCharacter(CharacterEntity):
         
         # we will need this later
         exit_vector = np.array(
-            [self.exitPath[1].x-self.exitPath[0].x, self.exitPath[1].y-self.exitPath[0].y])
+            [self.exitPath[-1].x-self.exitPath[0].x, self.exitPath[-1].y-self.exitPath[0].y])
 
         # exit term ------------------------------------------------------------------
         
@@ -240,7 +260,7 @@ class QCharacter(CharacterEntity):
             #vector term -------------------------------
             bomb_vector = np.array(
             [s_prime_bombPath[1].x-s_prime_bombPath[0].x, s_prime_bombPath[1].y-s_prime_bombPath[0].y])
-            f_BE_product = np.dot(bomb_vector, exit_vector)
+            f_BE_product = np.dot(exit_vector, bomb_vector)
             if f_BE_product>1:
                 f_BE_product = 1
             elif f_BE_product<1:
@@ -255,25 +275,32 @@ class QCharacter(CharacterEntity):
         # monster terms ------------------------------------------------------------------
         if len(s_prime_monsterNodes) != 0:
             s_prime_monsterPath = None
+            concerned = False
             for s_p_mNode in s_prime_monsterNodes:
                 path = Solver.solve_path(
                     wrld, s_prime_qCharNode, s_p_mNode,wallClip = self.wallClip,noMonsters=False, findExplosion = True)
                 if s_prime_monsterPath is None or len(path) < len(s_prime_monsterPath):
                     s_prime_monsterPath = path
-            f_mon = self.value_dist(len(s_prime_monsterPath))
-            self.previousF[action].append(f_mon)
-            q_value += self.weights[3]*f_mon
+                if len(s_prime_monsterPath)<=3:
+                    concerned = True
+            if concerned:
+                f_mon = self.value_dist(len(s_prime_monsterPath))
+                self.previousF[action].append(f_mon)
+                q_value += self.weights[3]*f_mon
 
-            monster_vector = np.array(
-                [s_prime_monsterPath[1].x-s_prime_monsterPath[0].x, s_prime_monsterPath[1].y-s_prime_monsterPath[0].y])
-            
-            f_ME_product = np.dot(monster_vector, exit_vector)
-            if f_ME_product>1:
-                f_ME_product = 1
-            elif f_ME_product<1:
-                f_ME_product=-1
-            self.previousF[action].append(f_ME_product)
-            q_value += self.weights[4]*f_ME_product
+                monster_vector = np.array(
+                    [s_prime_monsterPath[1].x-s_prime_monsterPath[0].x, s_prime_monsterPath[1].y-s_prime_monsterPath[0].y])
+                
+                f_ME_product = np.dot(exit_vector, monster_vector)
+                if f_ME_product>1:
+                    f_ME_product = 1
+                elif f_ME_product<1:
+                    f_ME_product=-1
+                self.previousF[action].append(f_ME_product)
+                q_value += self.weights[4]*f_ME_product
+            else:
+                self.previousF[action].append(0) #w3
+                self.previousF[action].append(0) #w4
         else:
             self.previousF[action].append(0) #w3
             self.previousF[action].append(0) #w4
@@ -292,9 +319,9 @@ class QCharacter(CharacterEntity):
             q_value += self.weights[5]*f_exp
 
             explosion_vector = np.array(
-                [s_prime_explosionPath[1].x-s_prime_explosionPath[0].x, s_prime_explosionPath[1].y-s_prime_explosionPath[0].y])
+                [s_prime_explosionPath[-1].x-s_prime_explosionPath[0].x, s_prime_explosionPath[-1].y-s_prime_explosionPath[0].y])
             
-            f_ExpE_product = np.dot(explosion_vector, exit_vector)
+            f_ExpE_product = np.dot(exit_vector, explosion_vector)
             if f_ExpE_product>1:
                 f_ExpE_product = 1
             elif f_ExpE_product<1:
@@ -307,11 +334,11 @@ class QCharacter(CharacterEntity):
 
         # x/y proximity terms ------------------------------------------------------------------
         
-        f_x_short = self.value_dist(self.xWall_distance(s_prime[0],s_prime_qCharNode))
+        f_x_short = self.value_dist(self.xWall_distance(s_prime[0],s_prime_qCharNode))/1000
         self.previousF[action].append(f_x_short)
         q_value += self.weights[7]*f_x_short
         
-        f_y_short = self.value_dist(self.yWall_distance(s_prime[0],s_prime_qCharNode))
+        f_y_short = self.value_dist(self.yWall_distance(s_prime[0],s_prime_qCharNode))/1000
         self.previousF[action].append(f_y_short)
         q_value += self.weights[8]*f_y_short
         
@@ -321,12 +348,13 @@ class QCharacter(CharacterEntity):
         return 1/(1+d)
 
     def weight_adjust_helper(self, wrld, qCharNode):
+        tempf = self.previousF
         all_q = self.Q_max_a(wrld, qCharNode)
         reward = self.previousScore-wrld.scores[self.name]
         print(f"reward:{reward}")
         delta_correction = (reward+(self.gamma*all_q[0][1]))-self.previousQ
-        for i, w in enumerate(self.weights):
-            self.weights[i] = self.weights[i] + (self.alpha*delta_correction * self.previousF[self.previousAction][i])
+        for i in range(len(self.weights)):
+            self.weights[i] = self.weights[i] + (self.alpha*delta_correction * tempf[self.previousAction][i])
 
         self.adjustWeights = False
         self.previousAction = (0, 0)
